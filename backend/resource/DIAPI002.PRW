@@ -1,11 +1,16 @@
 #Include 'Protheus.ch'
 
-user function DIAPI002()
-    FwCallApp("ativos-diefra")
+
+User function DIAPI002()
+
+  //  FwCallApp("ativos-diefra")
+
+    ativo.api.diefra.u_listaAtivos('id', '11', 'id', 1, 10 )  
+
 return 
 
 
-
+/*
 Static function  JsToAdvpl(oWebChannel,cType,cContent) 
 
 
@@ -21,7 +26,7 @@ Local _aRetorno := {}
         // Se a interação que recebi for igual a receberProtheus
         Case cType == 'receberProtheus'
             conout(cContent)
-            ativo.api.diefra.u_lista('id', '11', 'id', 1, 10 )  
+            _aRetorno := ativo.api.diefra.u_listaAtivos('id', '11', 'id', 1, 10 )  
     End
  
-return
+return  */

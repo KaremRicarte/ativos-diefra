@@ -22,7 +22,7 @@ User Function DIATV001()
 	Private oBrowse
 	Private cCodVend
 	
-	If xCodVen()
+//	If xCodVen()
 
 		If lCkFileZZ4 .And. lCkFileZZ5
 
@@ -55,7 +55,7 @@ User Function DIATV001()
 			MsgAlert("WorkArea não foi criada para as tabelas ZZ4 e ZZ5! Favor contatar o administrador do sistema!")
 		Endif 	
 		
-	Endif 	
+//	Endif 	
 
 Return
 
@@ -177,8 +177,9 @@ Static Function ModelDef()
  	//oStr1:SetProperty('ZZ4_NUMERO',MODEL_FIELD_INIT,{||GETSXENUM()})
 	oStr1:SetProperty('ZZ4_NUMERO',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZZ4", "ZZ4_NUMERO")')) 
 	oStr1:SetProperty('ZZ4_USUARI',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'cUserName')) 
-	oStr1:SetProperty('ZZ4_CC',   MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("CTT", M->ZZ4_CC)'))  
-	oStr2:SetProperty('ZZ5_NUMERO',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZZ4", "ZZ4_NUMERO")')) 
+	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("CTT", M->ZZ4_CC)'))  
+	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_VALID,   { || DIAPGRD() } )  
+//	oStr2:SetProperty('ZZ5_NUMERO',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZZ4", "ZZ4_NUMERO")')) 
     //Validação de Campo
 //	oStFilho:SetProperty('ZZ3_CODCD',  MODEL_FIELD_OBRIGAT, .F. ) 
 	//oStr1:SetProperty('ZZ4_USUARI',MODEL_FIELD_INIT,cUserName)
@@ -191,6 +192,77 @@ Static Function ModelDef()
 	oModel:GetModel('ZZ5DETAIL'):SetDescription('Itens')
 
 Return(oModel)
+
+
+
+static Function DIAPGRD() 
+
+aResp := xCodAtv()
+
+aSaveLines := FWSaveRows('ZZ5DETAIL')
+	nTamGD	:= oGrid:Length()
+	For nX := 1 to len(aResp)
+		If .Not. aTail(aResp[nX])	//Nao usado
+			If oGrid:AddLine() == nTamGD	//Erro ao adicionar linha
+				Exit
+			Else
+				nTamGD	:= oGrid:Length()
+				If .Not. oGrid:SetValue('ZQH_RESPON',aResp[nX][cRP_COD])	//Erro ao setar campo
+					lRet	:= .F.
+					Exit
+				EndIf
+			EndIf
+		EndIf
+	Next
+	FWRestRows( aSaveLine,/*oMdl*/)
+
+return
+
+
+Static Function xCodAtv()
+
+	Local cQuery   := ""
+	Local cTemp    := GetNextAlias()
+	Local lRet     := .T.
+	Local _aAtivos, _aAtivos2 := {}
+	
+	cQuery := "SELECT N3_CBASE, N3_HISTOR  FROM "+RetSQLName("SN3")
+	cQuery += " WHERE N3_FILIAL = '"+xFilial("SN3")+"'"
+	cQuery += "		AND N3_CCUSTO  = '"+ZZ4->ZZ4_CC+"'"
+	cQuery += "	    AND N3_DTBAIXA = ''
+	cQuery += "		AND D_E_L_E_T_ <> '*'"
+	
+	If Select(cTemp) > 0
+    	(cTemp)->(DbCloseArea())
+    	cTemp := GetNextAlias()
+   	Endif
+	
+	cQuery := ChangeQuery(cQuery)
+    
+    DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cTemp,.F.,.T.)
+
+	DbSelectArea(cTemp)
+
+	_aAtivos2 := {}
+
+	While !Eof()
+		_aAtivos := {} 
+		aadd(_aAtivos, (cTemp)->N3_CBASE)
+		aadd(_aAtivos, (cTemp)->N3_CBASE)
+
+		_aAtivos2 := aClone(_aAtivos)
+
+		DbSkip()
+
+	EndDo 
+	
+	/*
+	If Empty(cCodVend)
+		lRet := .F.
+		MsgAlert("Favor solicitar o seu cadastro de vendedor para que possa acessar esta rotina!")
+	Endif 
+  */ 
+Return (_aAtivos2)
 
 /*=================================================================
 Autor: KAREM RICARTE
@@ -253,7 +325,7 @@ Static Function DIATV001V(oModel)
 
 				//Carrego as informações do cabeçalho para os campos ocultos da grid 
 				oStr2:LoadValue('ZZ5_FILIAL',oStr1:GetValue('ZZ4_FILIAL'))
-				oStr2:LoadValue('ZZ5_NUMERO',oStr1:GetValue('ZZ4_NUMERO'))
+			//	oStr2:LoadValue('ZZ5_NUMERO',oStr1:GetValue('ZZ4_NUMERO'))
 			//	oStr2:LoadValue('ZZ5_CLIENT',oStr1:GetValue('ZZ4_CLIENT'))
 			//	oStr2:LoadValue('ZZ5_LOJA'  ,oStr1:GetValue('ZZ4_LOJA'  ))
 
@@ -278,36 +350,6 @@ Consultoria : Prox
 Uso: Diefra
 Info: Validação para verificar se o usuário possui permissão na rotina
 *==================================================================*/
-Static Function xCodVen()
-
-	Local cQuery := ""
-	Local cTemp  := GetNextAlias()
-	Local lRet   := .T.
-	
-	cQuery := "SELECT A3_COD FROM "+RetSQLName("SA3")
-	cQuery += " WHERE A3_FILIAL = '"+xFilial("SA3")+"'"
-	cQuery += "		AND A3_CODUSR  = '"+__cUserID+"'"
-	cQuery += "		AND D_E_L_E_T_ <> '*'"
-	
-	If Select(cTemp) > 0
-    	(cTemp)->(DbCloseArea())
-    	cTemp := GetNextAlias()
-   	Endif
-	
-	cQuery := ChangeQuery(cQuery)
-    
-    DbUseArea(.T.,"TOPCONN",TcGenQry(,,cQuery),cTemp,.F.,.T.)
-
-	DbSelectArea(cTemp)
-
-	cCodVend := (cTemp)->A3_COD 
-	
-	If Empty(cCodVend)
-		lRet := .F.
-		MsgAlert("Favor solicitar o seu cadastro de vendedor para que possa acessar esta rotina!")
-	Endif 
-
-Return(lRet)
 
 /*=================================================================
 Autor: KAREM RICARTE

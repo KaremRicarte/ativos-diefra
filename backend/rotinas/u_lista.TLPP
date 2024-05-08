@@ -7,7 +7,7 @@ namespace ativo.api.diefra
 
 @get('inventario')
 
-function u_lista(cfilter, cSearch, cOrder, nPage, nPageSize) as Character 
+function u_listaAtivos(cfilter, cSearch, cOrder, nPage, nPageSize) as Character 
 
        Local cQuery        as Character
     Local cwhere        as Character

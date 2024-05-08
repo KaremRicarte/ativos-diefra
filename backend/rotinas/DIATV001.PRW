@@ -197,40 +197,75 @@ Return(oModel)
 
 static Function DIAPGRD() 
 
+Local oModel := FWModelActive()  
+Local oGrid  := oModel:GetModel('ZZ5DETAIL')
+lOCAL nX 
+Local lRet     := .T. 
+Local aResp := {} 
+
+
+
+/*
+IF oGrid:Length() > 1 
+	oGrid:ClearData(.F.,.T.)
+EndIf */
+
 aResp := xCodAtv()
 
-aSaveLines := FWSaveRows('ZZ5DETAIL')
+/*
+for nX := 1 to oGrid:Length()
+    oGrid:GoLine(nX)
+    oGrid:DeleteLine()
+next  */
+
+aSaveLine := FWSaveRows()
 	nTamGD	:= oGrid:Length()
 	For nX := 1 to len(aResp)
-		If .Not. aTail(aResp[nX])	//Nao usado
+		If !Empty(oGrid:GetValue('ZZ5_CBASE')) //.Not. aTail(aResp[nX])	//Nao usado
 			If oGrid:AddLine() == nTamGD	//Erro ao adicionar linha
+				oModel:GetErrorMsgText() 
 				Exit
-			Else
-				nTamGD	:= oGrid:Length()
-				If .Not. oGrid:SetValue('ZQH_RESPON',aResp[nX][cRP_COD])	//Erro ao setar campo
-					lRet	:= .F.
-					Exit
-				EndIf
 			EndIf
 		EndIf
+
+		nTamGD	:= oGrid:Length()
+		If .Not. oGrid:SetValue('ZZ5_CBASE',aResp[nX][1])	//Erro ao setar campo
+			lRet	:= .F.
+			oModel:GetErrorMsgText() 
+			Exit 
+		ElseIf  .Not. oGrid:SetValue('ZZ5_PLAQUE',aResp[nX][2])	//Erro ao setar campo 
+			lRet	:= .F.
+			oModel:GetErrorMsgText() 
+			Exit 
+		ElseIf  .Not. oGrid:SetValue('ZZ5_DESCRI',aResp[nX][3])	//Erro ao setar campo 
+			lRet	:= .F.
+			oModel:GetErrorMsgText() 
+			Exit 
+		
+		EndIf
+		
+	
 	Next
 	FWRestRows( aSaveLine,/*oMdl*/)
 
-return
+return lRet
 
 
 Static Function xCodAtv()
 
 	Local cQuery   := ""
 	Local cTemp    := GetNextAlias()
-	Local lRet     := .T.
 	Local _aAtivos, _aAtivos2 := {}
+	Local oModel := FwModelActive()
+	Local _cValor   := oModel:GetValue( 'ZZ4MASTER', 'ZZ4_CC' )
 	
-	cQuery := "SELECT N3_CBASE, N3_HISTOR  FROM "+RetSQLName("SN3")
+	cQuery := " SELECT N3_CBASE, N1_DESCRIC, N1_CHAPA  FROM "+RetSQLName("SN3")+" SN3" 
+	cQuery += " INNER JOIN "+RetSQLName("SN1")+" SN1
+	cQuery += " ON N3_CBASE =  N1_CBASE AND N3_FILIAL = N1_FILIAL 
 	cQuery += " WHERE N3_FILIAL = '"+xFilial("SN3")+"'"
-	cQuery += "		AND N3_CCUSTO  = '"+ZZ4->ZZ4_CC+"'"
+	cQuery += "		AND N3_CCUSTO  = '"+_cValor+"'"
 	cQuery += "	    AND N3_DTBAIXA = ''
-	cQuery += "		AND D_E_L_E_T_ <> '*'"
+	cQuery += "		AND SN3.D_E_L_E_T_ = '' "
 	
 	If Select(cTemp) > 0
     	(cTemp)->(DbCloseArea())
@@ -246,22 +281,26 @@ Static Function xCodAtv()
 	_aAtivos2 := {}
 
 	While !Eof()
+		
 		_aAtivos := {} 
+		
 		aadd(_aAtivos, (cTemp)->N3_CBASE)
-		aadd(_aAtivos, (cTemp)->N3_CBASE)
+		aadd(_aAtivos, (cTemp)->N1_CHAPA)
+		aadd(_aAtivos, (cTemp)->N1_DESCRIC)
+	
 
-		_aAtivos2 := aClone(_aAtivos)
+		aadd(_aAtivos2 ,_aAtivos)
 
 		DbSkip()
 
 	EndDo 
 	
-	/*
-	If Empty(cCodVend)
-		lRet := .F.
-		MsgAlert("Favor solicitar o seu cadastro de vendedor para que possa acessar esta rotina!")
-	Endif 
-  */ 
+/*
+If Empty(cCodVend)
+	lRet := .F.
+	MsgAlert("Favor solicitar o seu cadastro de vendedor para que possa acessar esta rotina!")
+Endif 
+*/ 
 Return (_aAtivos2)
 
 /*=================================================================

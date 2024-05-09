@@ -31,5 +31,6 @@
 			"label": "SIGAATF"
 		}
 	],
-	"lastProgramExecuted": "SIGAATF"
+	"lastProgramExecuted": "SIGAATF",
+	"lastProgramArguments": []
 }

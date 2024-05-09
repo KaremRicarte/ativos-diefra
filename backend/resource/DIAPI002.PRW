@@ -5,7 +5,7 @@ User function DIAPI002()
 
   //  FwCallApp("ativos-diefra")
 
-    ativo.api.diefra.u_listaAtivos('id', '11', 'id', 1, 10 )  
+    ativo.api.diefra.u_listaLote('id', '11', 'id', 1, 10 )  
 
 return 
 

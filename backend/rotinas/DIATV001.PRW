@@ -124,6 +124,9 @@ Static Function ViewDef()
 
 	//Campo incremental
 	oView:AddIncrementField('VIEW_ZZ5','ZZ5_ITEM')
+
+	   //Não permite a edição dos campos do cabeçalho
+//    oView:SetProperty('*', MVC_VIEW_CANCHANGE, .F.)
 		
 	//Removo os campos da grid
 /*	oStr2:RemoveField('ZZ5_NUMERO')
@@ -177,8 +180,11 @@ Static Function ModelDef()
  	//oStr1:SetProperty('ZZ4_NUMERO',MODEL_FIELD_INIT,{||GETSXENUM()})
 	oStr1:SetProperty('ZZ4_NUMERO',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZZ4", "ZZ4_NUMERO")')) 
 	oStr1:SetProperty('ZZ4_USUARI',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'cUserName')) 
+//	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_WHEN,   {||  IIF(empty(ZZ4_CC), .T., .F.)     } )  
 	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_VALID,   FwBuildFeature(STRUCT_FEATURE_VALID,   'ExistCpo("CTT", M->ZZ4_CC)'))  
+	
 	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_VALID,   { || DIAPGRD() } )  
+//	oStr1:SetProperty('ZZ4_CC',        MODEL_FIELD_NOUPD,   .T.)  
 //	oStr2:SetProperty('ZZ5_NUMERO',    MODEL_FIELD_INIT,    FwBuildFeature(STRUCT_FEATURE_INIPAD,  'GetSXENum("ZZ4", "ZZ4_NUMERO")')) 
     //Validação de Campo
 //	oStFilho:SetProperty('ZZ3_CODCD',  MODEL_FIELD_OBRIGAT, .F. ) 
@@ -199,16 +205,20 @@ static Function DIAPGRD()
 
 Local oModel := FWModelActive()  
 Local oGrid  := oModel:GetModel('ZZ5DETAIL')
+Local _cCC   := oModel:GetValue( 'ZZ5DETAIL', 'ZZ5_CBASE' )
 lOCAL nX 
 Local lRet     := .T. 
 Local aResp := {} 
 
 
 
-/*
-IF oGrid:Length() > 1 
-	oGrid:ClearData(.F.,.T.)
-EndIf */
+
+IF !Empty(_cCC) 
+	Aviso( 'Atenção','O Lote já foi carregado por centro de custo e não pode ser alterado, somente cancelado e iniciado novamente')
+	lRet	:= .F.
+	return  lRet
+EndIf  
+
 
 aResp := xCodAtv()
 
@@ -216,7 +226,7 @@ aResp := xCodAtv()
 for nX := 1 to oGrid:Length()
     oGrid:GoLine(nX)
     oGrid:DeleteLine()
-next  */
+next    */
 
 aSaveLine := FWSaveRows()
 	nTamGD	:= oGrid:Length()

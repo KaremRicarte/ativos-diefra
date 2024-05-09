@@ -1,0 +1,87 @@
+#include 'tlpp-core.th'
+#include 'totvs.ch'
+
+
+
+namespace ativo.api.diefra
+
+@get('inventario')
+
+function u_listaLote(cfilter, c_Search, c_Order, n_Page, n_PageSize) as Character 
+
+        Local cQuery        as Character
+        Local cwhere        as Character
+        Local cResult       as Character
+        Local jResult       as Json
+        Local jHeaderRes    as Json
+        Local cOrder        as Character 
+        Local cSearch       as Character
+        Local nPage         as Numeric
+        Local nPageSize     as Numeric
+        Local oQuery        as Object
+
+        cSearch := c_Search
+        cOrder  := c_Order
+        nPage := n_Page 
+        nPageSize := n_PageSize 
+
+               
+         If .not. ValType(cOrder) == 'C'
+            cOrder := 'ZZ4_CC, ZZ4_DESCRI'
+        else
+            DO CASE 
+                CASE cOrder == 'desc'
+                    cOrder :=  'ZZ4_DESCRI'
+                CASE cOrder == 'id'
+                cOrder :=  'ZZ4_CC'
+                CASE cOrder == 'tipo'
+                    cOrder :=  'ZZ4_STATUS'
+               CASE cOrder == 'grupo'
+                    cOrder := 'ZZ4_USUARI'                                  
+                OTHERWISE 
+                    cOrder := 'ZZ4_CC, ZZ4_DESCRI'
+            END CASE
+        Endif
+
+        jHeaderRes := JsonObject():New()
+        jHeaderRes['Content-Type'] := 'application/json'
+
+        cQuery := "SELECT #QueryFields# FROM "+RetSqlName('ZZ4') +" ZZ4 "
+      //  cQuery +=CRLF + "SELECT * FROM  "+RetSqlName('SB1') +" SB1) SB1"
+        cQuery += CRLF +"WHERE #QueryWhere#" 
+        cWhere := "D_E_L_E_T_ = ' '"
+
+        If cfilter == 'desc'
+            cWhere += CRLF +" AND ZZ4_DESCRI LIKE '%"+AllTrim(cSearch)+ "%' "
+        ElseIf  cfilter == 'id'
+            cWhere += CRLF +" AND ZZ4_CC LIKE '"+AllTrim(cSearch)+ "%' "
+        EndIf
+        Conout(cWhere)
+
+        oQuery := FWAdapterBaseV2():new('GET', .T.)
+
+
+        oQuery:AddMapFields('cc',        'ZZ4_CC'   , .T., .T.)
+        oQuery:AddMapFields('descicao',  'ZZ4_DESCRI'  , .T., .T.)
+        oQuery:AddMapFields('mes_ano',   'ZZ4_MESANO'  , .T., .T.)
+        oQuery:AddMapFields('usuario',   'ZZ4_USUARI'    , .T., .T.)
+        oQuery:AddMapFields('codigo',    'ZZ4_NUMERO', .T., .T.)
+        oQuery:AddMapFields('status',    'ZZ4_STATUS' , .T., .T.)
+        
+        oQuery:SetQuery(cQuery)
+        oQuery:SetWhere(cWhere)
+        oQuery:SetOrder(cOrder)
+        oQuery:SetPageSize(nPageSize)
+        oQuery:SetPage(nPage)
+      
+
+        If oQuery:Execute()
+            oQuery:FillGetResponse()
+            conout(oQuery)
+            cResult := oQuery:getJsonResponse()
+        EndIf
+
+        jResult := JsonObject():New()
+        jResult:FromJson(cResult)
+
+return cResult   
